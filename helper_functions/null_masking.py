@@ -203,16 +203,9 @@ if __name__ == "__main__":
     # Step 1: Convert 0s to NaN (true nulls)
     true_null_df, true_null_stats = convert_zeros_to_true_nulls(ceda_data)
     
-    print("\nSummary of true null conversion:")
-    print(f"Total cells: {true_null_stats['total_cells']:,}")
-    print(f"Zeros found: {true_null_stats['total_zeros_before']:,}")
-    print(f"Nulls created: {true_null_stats['total_nulls_after']:,}")
-    print(f"Affected columns: {len(true_null_stats['affected_columns'])}")
-    print(f"Affected countries: {len(true_null_stats['affected_countries'])}")
-    
     # Save the true nulls data
     true_null_df.to_csv('ceda_true_nulls.csv', index=False)
-    print("\nSaved true nulls to: ceda_true_nulls.csv")
+    print("Saved true nulls to: ceda_true_nulls.csv")
     
     print("\n" + "=" * 60)
     print("STEP 2: Create Engineered Nulls for Benchmarking")
@@ -226,34 +219,19 @@ if __name__ == "__main__":
         exclude_columns=['Country']
     )
     
-    print("\nBenchmark dataset created:")
-    print(f"Shape: {benchmark_df.shape}")
-    print(f"Total nulls: {mask_info['total_nulls']:,}")
-    print(f"  - True database nulls: {mask_info['original_nulls_count']:,}")
-    print(f"  - Engineered nulls: {mask_info['engineered_nulls_count']:,}")
-    
     # Save the benchmark data
     benchmark_df.to_csv('ceda_benchmark.csv', index=False)
-    print("\nSaved benchmark data to: ceda_benchmark.csv")
+    print("Saved benchmark data to: ceda_benchmark.csv")
     
     # Create and save masked values reference
     masked_values_df = get_masked_values_df(mask_info, true_null_df)
     if not masked_values_df.empty:
         masked_values_df.to_csv('masked_values_reference.csv', index=False)
         print("Saved masked values reference to: masked_values_reference.csv")
-        
-        # Show sample of masked values
-        print("\nSample of masked values (first 5):")
-        print(masked_values_df.head())
     
-    # Summary statistics
     print("\n" + "=" * 60)
-    print("FINAL SUMMARY")
+    print("FILES SAVED")
     print("=" * 60)
-    print(f"Original data shape: {ceda_data.shape}")
-    print(f"True nulls (from database 0s): {true_null_stats['total_nulls_after']:,} cells")
-    print(f"Engineered nulls (for testing): {mask_info['engineered_nulls_count']:,} cells")
-    print(f"Total cells: {true_null_stats['total_cells']:,}")
-    print("\nMissing data percentages:")
-    print(f"  True database missing: {(true_null_stats['total_nulls_after']/true_null_stats['total_cells'])*100:.2f}%")
-    print(f"  After adding engineered: {(mask_info['total_nulls']/true_null_stats['total_cells'])*100:.2f}%")
+    print("1. ceda_true_nulls.csv - 0s converted to NaN (true database nulls)")
+    print("2. ceda_benchmark.csv - With additional 10% engineered nulls")
+    print("3. masked_values_reference.csv - Answer key for engineered nulls")
