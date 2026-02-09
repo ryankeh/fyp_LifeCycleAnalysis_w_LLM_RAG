@@ -19,7 +19,7 @@ def extract_ceda_data(excel_file_path):
             header=None, 
             skiprows=27,  # Skip first 27 rows to start at row 28
             nrows=150,    # Read 150 rows (from row 28 to 177 inclusive)
-            usecols='C,E:ON',  # Use columns C through ON
+            usecols='B,C,E:ON',  # Use columns C through ON
             dtype=str
         )
         

@@ -147,6 +147,220 @@ def plot_zeros_per_industry(df):
     
     return zeros_df
 
+#------------------------------------------------------------------------------------------------------------------------------
+#extra statistics stuff (country per user)
+
+def list_missing_industries_by_country(df, top_n=None):
+    """
+    List missing industries (zero values) for each country.
+    
+    Parameters:
+    df (DataFrame): CEDA data with 'Country' column and industry columns
+    top_n (int, optional): Show only top N countries with most missing industries.
+                          If None, shows all countries with missing data.
+    
+    Returns:
+    DataFrame: Summary of missing industries per country
+    dict: Detailed dictionary with missing industries for each country
+    """
+    # Get industry columns
+    industry_cols = [col for col in df.columns if col != 'Country']
+    
+    # Initialize results
+    missing_summary = []
+    missing_details = {}
+    
+    # Check each country
+    for idx, row in df.iterrows():
+        country = row['Country']
+        missing_industries = []
+        
+        # Find industries with zero values
+        for industry in industry_cols:
+            if row[industry] == 0:
+                missing_industries.append(industry)
+        
+        # If country has missing industries, add to results
+        if missing_industries:
+            missing_count = len(missing_industries)
+            missing_summary.append({
+                'Country': country,
+                'Missing_Count': missing_count,
+                'Missing_Percentage': (missing_count / len(industry_cols)) * 100
+            })
+            missing_details[country] = {
+                'count': missing_count,
+                'percentage': (missing_count / len(industry_cols)) * 100,
+                'industries': missing_industries
+            }
+    
+    if not missing_summary:
+        print("No missing industries (zero values) found in any country!")
+        return None, None
+    
+    # Convert summary to DataFrame
+    missing_summary_df = pd.DataFrame(missing_summary)
+    
+    # Sort by missing count (descending)
+    missing_summary_df = missing_summary_df.sort_values('Missing_Count', ascending=False)
+    
+    # Limit to top_n if specified
+    if top_n is not None and top_n > 0:
+        missing_summary_df = missing_summary_df.head(top_n)
+        top_countries = missing_summary_df['Country'].tolist()
+        # Filter details dictionary to only include top countries
+        missing_details = {k: v for k, v in missing_details.items() if k in top_countries}
+    
+    return missing_summary_df, missing_details
+
+def print_missing_industries_report(missing_summary_df, missing_details, show_details=True, max_industries_per_country=10):
+    """
+    Print a formatted report of missing industries by country.
+    
+    Parameters:
+    missing_summary_df (DataFrame): Summary DataFrame from list_missing_industries_by_country
+    missing_details (dict): Details dictionary from list_missing_industries_by_country
+    show_details (bool): Whether to show detailed list of missing industries
+    max_industries_per_country (int): Maximum number of industries to show per country
+    """
+    if missing_summary_df is None:
+        return
+    
+    print("=" * 80)
+    print("MISSING INDUSTRIES BY COUNTRY REPORT")
+    print("=" * 80)
+    
+    # Print summary statistics
+    total_countries = len(missing_summary_df)
+    total_missing = missing_summary_df['Missing_Count'].sum()
+    avg_missing = missing_summary_df['Missing_Count'].mean()
+    max_missing = missing_summary_df['Missing_Count'].max()
+    
+    print(f"\n📊 SUMMARY STATISTICS:")
+    print(f"   • Countries with missing data: {total_countries}")
+    print(f"   • Total missing industry entries: {total_missing}")
+    print(f"   • Average missing per country: {avg_missing:.1f}")
+    print(f"   • Maximum missing in a country: {max_missing}")
+    print(f"   • Average missing percentage: {missing_summary_df['Missing_Percentage'].mean():.1f}%")
+    
+    # Print summary table
+    print(f"\n{'='*80}")
+    print(f"{'Country':<25} {'Missing Count':<15} {'Missing %':<12} {'Severity'}")
+    print(f"{'-'*80}")
+    
+    for _, row in missing_summary_df.iterrows():
+        country = row['Country']
+        count = row['Missing_Count']
+        percentage = row['Missing_Percentage']
+        
+        # Determine severity level
+        if percentage < 10:
+            severity = "Low"
+        elif percentage < 30:
+            severity = "Medium"
+        elif percentage < 50:
+            severity = "High"
+        else:
+            severity = "Critical"
+        
+        print(f"{country:<25} {count:<15} {percentage:.1f}%{'':<6} {severity}")
+    
+    # Print detailed missing industries if requested
+    if show_details and missing_details:
+        print(f"\n{'='*80}")
+        print("DETAILED MISSING INDUSTRIES BY COUNTRY:")
+        print(f"{'='*80}")
+        
+        for country, details in missing_details.items():
+            print(f"\n📍 {country}:")
+            print(f"   • Missing industries: {details['count']} ({details['percentage']:.1f}% of total)")
+            
+            industries = details['industries']
+            if len(industries) <= max_industries_per_country:
+                print(f"   • Industries: {', '.join(industries)}")
+            else:
+                print(f"   • Industries (first {max_industries_per_country} of {len(industries)}):")
+                print(f"     {', '.join(industries[:max_industries_per_country])}")
+                print(f"     ... and {len(industries) - max_industries_per_country} more")
+    
+    print(f"\n{'='*80}")
+
+def export_missing_industries_to_csv(missing_summary_df, missing_details, filename_prefix="missing_industries"):
+    """
+    Export missing industries data to CSV files.
+    
+    Parameters:
+    missing_summary_df (DataFrame): Summary DataFrame
+    missing_details (dict): Details dictionary
+    filename_prefix (str): Prefix for output filenames
+    """
+    if missing_summary_df is None:
+        return
+    
+    # Export summary
+    summary_filename = f"{filename_prefix}_summary.csv"
+    missing_summary_df.to_csv(summary_filename, index=False)
+    print(f"✓ Summary exported to: {summary_filename}")
+    
+    # Export detailed data
+    detailed_data = []
+    for country, details in missing_details.items():
+        for industry in details['industries']:
+            detailed_data.append({
+                'Country': country,
+                'Industry': industry,
+                'Missing_Count': details['count'],
+                'Missing_Percentage': details['percentage']
+            })
+    
+    if detailed_data:
+        detailed_df = pd.DataFrame(detailed_data)
+        detailed_filename = f"{filename_prefix}_detailed.csv"
+        detailed_df.to_csv(detailed_filename, index=False)
+        print(f"✓ Detailed data exported to: {detailed_filename}")
+    
+    # Export wide format (country x industry matrix)
+    if missing_details:
+        # Get all unique industries with missing data
+        all_missing_industries = set()
+        for details in missing_details.values():
+            all_missing_industries.update(details['industries'])
+        
+        # Create matrix
+        matrix_data = []
+        for country, details in missing_details.items():
+            row = {'Country': country}
+            for industry in sorted(all_missing_industries):
+                row[industry] = 1 if industry in details['industries'] else 0
+            matrix_data.append(row)
+        
+        matrix_df = pd.DataFrame(matrix_data)
+        matrix_filename = f"{filename_prefix}_matrix.csv"
+        matrix_df.to_csv(matrix_filename, index=False)
+        print(f"✓ Matrix format exported to: {matrix_filename}")
+
+
+# summary_df, details_dict = list_missing_industries_by_country(ceda_data)
+
+# if summary_df is not None:
+#     # Print report
+#     print_missing_industries_report(summary_df, details_dict, show_details=True)
+    
+#     # Export to CSV
+#     export_missing_industries_to_csv(summary_df, details_dict)
+    
+#     # Get only top 10 countries with most missing industries
+#     top_summary, top_details = list_missing_industries_by_country(ceda_data, top_n=10)
+#     print("\n" + "="*80)
+#     print("TOP 10 COUNTRIES WITH MOST MISSING INDUSTRIES:")
+#     print_missing_industries_report(top_summary, top_details, show_details=True, max_industries_per_country=5)
+    
+#     # You can also use the summary DataFrame for further analysis
+#     print("\n📈 Quick analysis of missing data distribution:")
+#     print(f"   • Countries with >50% missing: {len(summary_df[summary_df['Missing_Percentage'] > 50])}")
+#     print(f"   • Countries with >25% missing: {len(summary_df[summary_df['Missing_Percentage'] > 25])}")
+#     print(f"   • Countries with >10% missing: {len(summary_df[summary_df['Missing_Percentage'] > 10])}")
+
 # Example usage:
 if __name__ == "__main__":
     # Assuming ceda_data is your DataFrame
