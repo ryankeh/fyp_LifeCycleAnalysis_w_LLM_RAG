@@ -350,79 +350,72 @@ def calculate_correlations(indicators_df: pd.DataFrame, emissions_df: pd.DataFra
     return results_df
 
 def calculate_correlations_optimized(indicators_df: pd.DataFrame, emissions_df: pd.DataFrame,
-                                    indicators_country_col: str = 'Country Code',
-                                    emissions_country_col: str = 'Country Code') -> pd.DataFrame:
+                          indicators_country_col: str = 'Country Code',
+                          emissions_country_col: str = 'Country Code',
+                          indicators_name_col: str = 'Country Name',  # ADD THIS PARAMETER
+                          emissions_name_col: str = 'Country') -> pd.DataFrame:  # ADD THIS PARAMETER
     """
-    Optimized version for larger datasets (400 industries × 200 countries) using country codes
+    Calculate correlations between all indicator columns and all industry emissions columns
     """
-    # Ensure country codes are properly formatted
-    indicators_df[indicators_country_col] = indicators_df[indicators_country_col].astype(str).str.strip().str.upper()
-    emissions_df[emissions_country_col] = emissions_df[emissions_country_col].astype(str).str.strip().str.upper()
+    # Extract indicator columns (excluding ALL country-related columns)
+    indicator_cols_to_exclude = [indicators_country_col]
+    if indicators_name_col in indicators_df.columns:
+        indicator_cols_to_exclude.append(indicators_name_col)
     
-    # Merge the two datasets once on country codes
-    merged = pd.merge(
-        indicators_df,
-        emissions_df,
-        left_on=indicators_country_col,
-        right_on=emissions_country_col,
-        how='inner'
-    )
+    indicator_columns = [col for col in indicators_df.columns if col not in indicator_cols_to_exclude]
     
-    # Get column lists (excluding country code columns)
-    indicator_cols = [col for col in indicators_df.columns if col != indicators_country_col]
-    industry_cols = [col for col in emissions_df.columns if col != emissions_country_col]
+    # Extract industry columns (excluding ALL country-related columns)
+    industry_cols_to_exclude = [emissions_country_col]
+    if emissions_name_col in emissions_df.columns:
+        industry_cols_to_exclude.append(emissions_name_col)
     
-    # Pre-calculate correlation matrix
-    correlation_matrix = pd.DataFrame(index=indicator_cols, columns=industry_cols)
-    country_counts = pd.DataFrame(index=indicator_cols, columns=industry_cols)
+    industry_columns = [col for col in emissions_df.columns if col not in industry_cols_to_exclude]
     
-    print(f"Calculating correlations for {len(indicator_cols)} indicators × {len(industry_cols)} industries...")
+    # Create a dictionary to store correlations
+    correlation_results = []
     
-    # Calculate correlations efficiently
-    for idx, indicator in enumerate(indicator_cols):
-        if idx % 50 == 0:  # Progress indicator
-            print(f"  Processing indicator {idx+1}/{len(indicator_cols)}...")
+    # Calculate correlations for each industry
+    for industry in industry_columns:
+        industry_correlations = []
         
-        for industry in industry_cols:
-            # Get valid pairs (non-NaN)
-            valid_mask = merged[[indicator, industry]].notna().all(axis=1)
-            valid_data = merged.loc[valid_mask, [indicator, industry]]
+        for indicator in indicator_columns:
+            # Merge data for this specific indicator-industry pair
+            merged = pd.merge(
+                indicators_df[[indicators_country_col, indicator]],
+                emissions_df[[emissions_country_col, industry]],
+                left_on=indicators_country_col,
+                right_on=emissions_country_col
+            )
             
-            if len(valid_data) >= 3:  # Need at least 3 data points for meaningful correlation
-                corr = valid_data[indicator].corr(valid_data[industry])
-                correlation_matrix.loc[indicator, industry] = corr
-                country_counts.loc[indicator, industry] = len(valid_data)
-            else:
-                correlation_matrix.loc[indicator, industry] = np.nan
-                country_counts.loc[indicator, industry] = 0
+            # Drop rows with missing values
+            merged_clean = merged[[indicator, industry]].dropna()
+            
+            if len(merged_clean) >= 3:  # Need at least 3 data points for meaningful correlation
+                try:
+                    # Calculate Pearson correlation
+                    correlation = merged_clean[indicator].corr(merged_clean[industry])
+                    
+                    # Store result
+                    industry_correlations.append({
+                        'Industry': industry,
+                        'Indicator': indicator,
+                        'Correlation': correlation,
+                        'N_Countries': len(merged_clean)
+                    })
+                except (ValueError, TypeError):
+                    # Skip if correlation calculation fails
+                    continue
+        
+        # Add all correlations for this industry
+        correlation_results.extend(industry_correlations)
     
-    # Convert to long format
-    print("Converting to long format...")
-    correlation_df = correlation_matrix.stack().reset_index()
-    correlation_df.columns = ['Indicator', 'Industry', 'Correlation']
+    # Create DataFrame from results
+    results_df = pd.DataFrame(correlation_results)
     
-    # Add country counts
-    counts_series = country_counts.stack()
-    correlation_df['N_Countries'] = correlation_df.apply(
-        lambda row: counts_series.loc[(row['Indicator'], row['Industry'])] 
-        if (row['Indicator'], row['Industry']) in counts_series.index 
-        else 0, 
-        axis=1
-    )
+    # Calculate absolute correlation for ranking
+    results_df['Abs_Correlation'] = results_df['Correlation'].abs()
     
-    # Convert to numeric
-    correlation_df['Correlation'] = pd.to_numeric(correlation_df['Correlation'], errors='coerce')
-    correlation_df['N_Countries'] = pd.to_numeric(correlation_df['N_Countries'], errors='coerce')
-    
-    # Add absolute correlation
-    correlation_df['Abs_Correlation'] = correlation_df['Correlation'].abs()
-    
-    # Remove NaN correlations
-    correlation_df = correlation_df.dropna(subset=['Correlation'])
-    
-    print(f"Completed: {len(correlation_df)} valid correlations calculated")
-    
-    return correlation_df
+    return results_df
 
 # Use this function instead of calculate_correlations for large datasets
 
