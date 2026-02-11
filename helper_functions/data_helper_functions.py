@@ -1,41 +1,51 @@
 import pandas as pd
 
+import pandas as pd
+
 def extract_ceda_data(excel_file_path):
     """
-    Extract CEDA data from row 28 to 177, column C to ON from the Excel file.
+    Extract CEDA data from row 28 to 177, columns B through ON from the Excel file.
+    Column B = Country Names, Column C = Country Codes, Columns E:ON = Sector Data
     
     Parameters:
     excel_file_path (str): Path to the Excel file
     
     Returns:
-    pandas.DataFrame: Extracted data as a DataFrame
+    pandas.DataFrame: Extracted data as a DataFrame with proper column names
     """
     try:
-        # Read the Excel file, skipping the first 27 rows (0-indexed, so we skip 27 to start at row 28)
-        # Use header=None since we're reading raw data
+        # Read the Excel file
         df = pd.read_excel(
             excel_file_path, 
             sheet_name='Open CEDA', 
             header=None, 
-            skiprows=27,  # Skip first 27 rows to start at row 28
-            nrows=150,    # Read 150 rows (from row 28 to 177 inclusive)
-            usecols='B,C,E:ON',  # Use columns C through ON
+            skiprows=27,      # Skip first 27 rows to start at row 28
+            nrows=150,        # Read 150 rows (from row 28 to 177 inclusive)
+            usecols='B,C,E:ON',  # Columns: B=Country Name, C=Country Code, E:ON=Sector Data
             dtype=str
         )
         
         # Reset index to have clean row numbers starting from 0
         df.reset_index(drop=True, inplace=True)
         
-        # The first row (row 28 from the original file) becomes our column headers
-        df.columns = df.iloc[0]
+        # Get header row from the original file (row 28, which is now row 0 in our df)
+        # First 2 columns are fixed headers
+        headers = ['Country Code', 'Country'] + df.iloc[0, 2:].tolist()
+        
+        # Set the column names
+        df.columns = headers
         
         # Remove the first row since it's now our column headers
         df = df.iloc[1:].reset_index(drop=True)
-
-        # Convert all columns except the first one (country names) to numeric
-        # Keep the first column (country names) as strings
-        for col in df.columns[1:]:
-            df[col] = pd.to_numeric(df[col], errors='coerce')  # errors='coerce' converts invalid parsing to NaN
+        
+        print(f"Extracted data shape: {df.shape}")
+        print(f"Columns: {df.columns[:5].tolist()}...")  # Show first 5 columns
+        
+        # Convert numeric columns to appropriate type
+        # All columns except 'Country' and 'Country Code' should be numeric
+        for col in df.columns:
+            if col not in ['Country', 'Country Code']:
+                df[col] = pd.to_numeric(df[col], errors='coerce')  # Convert to numeric, errors become NaN
         
         return df
         
