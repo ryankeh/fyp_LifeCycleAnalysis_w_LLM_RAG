@@ -25,61 +25,68 @@ class IndustryRatingExtractor:
             variables[row['variable']] = {
                 'description': row['description'],
                 'scale_1': row['scale_1'],
-                'scale_3': row['scale_3'],
-                'scale_5': row['scale_5'],
+                'scale_1_examples': row['scale_1_examples'],  # Add this line
+                'scale_4': row['scale_4'],
+                'scale_4_examples': row['scale_4_examples'],  # Add this line
+                'scale_7': row['scale_7'],
+                'scale_7_examples': row['scale_7_examples'],  # Add this line
                 'category': row['category']
             }
         return variables
     
-    def _create_extraction_prompt(self, industry_code, industry_name):
-        """Create a prompt for extracting ratings"""
+    def _create_extraction_prompt(self, industry_code, industry_name, industry_description):
+        """Create a prompt for extracting ratings using the industry description"""
         
         # Format the variables for the prompt
         variables_text = ""
         for var_name, var_info in self.variables.items():
             variables_text += f"""
-{var_name}:
-- Description: {var_info['description']}
-- Scale 1: {var_info['scale_1']}
-- Scale 3: {var_info['scale_3']}
-- Scale 5: {var_info['scale_5']}
-- Category: {var_info['category']}
-"""
+    {var_name}:
+    - Description: {var_info['description']}
+    - Scale 1: {var_info['scale_1']}
+    Examples: {var_info['scale_1_examples']}
+    - Scale 4: {var_info['scale_4']}
+    Examples: {var_info['scale_4_examples']}
+    - Scale 7: {var_info['scale_7']}
+    Examples: {var_info['scale_7_examples']}
+    - Category: {var_info['category']}
+    """
         
         prompt = f"""You are an expert analyst extracting carbon intensity ratings for industries.
 
-INDUSTRY CODE: {industry_code}
-INDUSTRY NAME: {industry_name}
+    INDUSTRY CODE: {industry_code}
+    INDUSTRY NAME: {industry_name}
 
-RATING SCALE DEFINITIONS:
-{variables_text}
+    INDUSTRY DESCRIPTION:
+    {industry_description}
 
-TASK:
-For each variable above, rate this industry on a scale of 1-5 based on the provided scale definitions.
-Use your knowledge of typical industry operations, energy use, materials, and processes.
+    RATING SCALE DEFINITIONS:
+    {variables_text}
 
-IMPORTANT RULES:
-1. Only use ratings 1, 2, 3, 4, or 5 (whole numbers only, no decimals)
-2. Provide a brief 1-sentence justification for each rating
-3. Return ONLY valid JSON without any other text
+    TASK:
+    For each variable above, rate this industry on a scale of 1-7 based SOLELY on the provided industry description.
+    Base your ratings ONLY on evidence found in the description text.
 
-OUTPUT FORMAT:
-{{
-    "industry_code": "{industry_code}",
-    "industry_name": "{industry_name}",
-    "ratings": {{
-        "fossil_fuel_dependency": {{"score": 3, "justification": "Brief reason"}},
-        "fuel_switching_potential": {{"score": 2, "justification": "Brief reason"}},
-        "renewable_penetration": {{"score": 1, "justification": "Brief reason"}},
-        "grid_decarbonization_dependency": {{"score": 4, "justification": "Brief reason"}},
-        "electrification_readiness": {{"score": 3, "justification": "Brief reason"}},
-        "process_emission_intensity": {{"score": 2, "justification": "Brief reason"}},
-        "ccus_deployment": {{"score": 1, "justification": "Brief reason"}},
-        "material_efficiency_potential": {{"score": 3, "justification": "Brief reason"}},
-        "circular_economy_adoption": {{"score": 2, "justification": "Brief reason"}},
-        "product_lifetime_strategy": {{"score": 3, "justification": "Brief reason"}}
-    }}
-}}"""
+    IMPORTANT RULES:
+    1. Only use ratings 1, 2, 3, 4, 5, 6, or 7 (whole numbers only, no decimals)
+    2. Provide a brief 1-sentence justification for each rating, citing specific evidence from the description
+    3. Return ONLY valid JSON without any other text
+
+    OUTPUT FORMAT:
+    {{
+        "industry_code": "{industry_code}",
+        "industry_name": "{industry_name}",
+        "ratings": {{
+            "process_emission_intensity": {{"score": 4, "justification": "Brief reason based on description"}},
+            "material_processing_depth": {{"score": 3, "justification": "Brief reason based on description"}},
+            "thermal_process_intensity": {{"score": 5, "justification": "Brief reason based on description"}},
+            "electrification_feasibility": {{"score": 2, "justification": "Brief reason based on description"}},
+            "continuous_operations_intensity": {{"score": 6, "justification": "Brief reason based on description"}},
+            "material_throughput_scale": {{"score": 3, "justification": "Brief reason based on description"}},
+            "chemical_intensity": {{"score": 4, "justification": "Brief reason based on description"}},
+            "capital_vs_labor_intensity": {{"score": 5, "justification": "Brief reason based on description"}}
+        }}
+    }}"""
         
         return prompt
     
@@ -126,10 +133,10 @@ OUTPUT FORMAT:
             
             writer.writerow(row)
     
-    def extract_industry(self, industry_code, industry_name, max_retries=3):
+    def extract_industry(self, industry_code, industry_name, industry_description, max_retries=3):
         """Extract ratings for a single industry with retries"""
         
-        prompt = self._create_extraction_prompt(industry_code, industry_name)
+        prompt = self._create_extraction_prompt(industry_code, industry_name, industry_description)
         
         for attempt in range(max_retries):
             try:
@@ -139,7 +146,7 @@ OUTPUT FORMAT:
                     "stream": False,
                     "options": {
                         "num_gpu": 1,
-                        "temperature": 0.1,  # Low temp for consistency
+                        "temperature": 0.2,
                         "num_ctx": 4096,
                         "f16_kv": True,
                         "stop": ["\n\n\n"]
@@ -181,8 +188,8 @@ OUTPUT FORMAT:
         print("=" * 60)
         
         # Load industries
-        industries_df = pd.read_excel(industries_file, sheet_name='Sheet1')
-        industries_df.columns = ['sector_code', 'sector_name']
+        industries_df = pd.read_excel(industries_file, sheet_name='Metadata')
+        industries_df.columns = ['sector_code', 'sector_name', 'description']
         
         # Load progress
         progress = self._load_progress()
@@ -197,6 +204,8 @@ OUTPUT FORMAT:
         for idx, row in industries_df.iterrows():
             code = str(row['sector_code']).strip()
             name = str(row['sector_name']).strip()
+            description = str(row['description']).strip()
+
             
             if code in processed:
                 print(f"⏩ Skipping {code} - already processed")
@@ -204,7 +213,7 @@ OUTPUT FORMAT:
             
             print(f"\n📌 Processing [{idx+1}/{len(industries_df)}]: {code} - {name}")
             
-            result = self.extract_industry(code, name)
+            result = self.extract_industry(code, name, description)
             
             if result:
                 # Append to CSV
@@ -244,7 +253,7 @@ def main():
     extractor = IndustryRatingExtractor()
     
     # Process all industries
-    extractor.process_all_industries("data\ceda metadata condensed.xlsx")
+    extractor.process_all_industries("data/ceda_metadata.xlsx")
     
     # Show summary of results
     if os.path.exists(extractor.output_file):
