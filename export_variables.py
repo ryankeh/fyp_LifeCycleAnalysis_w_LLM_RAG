@@ -7,93 +7,93 @@ RATING_VARIABLES = {
     "process_emission_intensity": {
         "description": "Likelihood of inherent process emissions from chemical reactions or high-temperature processing",
         "scale_1": "Low - assembly, fabrication, services, simple mechanical processing",
-        "scale_1_examples": "Legal services (541100), Software publishers (511200)",
+        "scale_1_examples": "Legal services (541100) - No chemical reactions or high-temperature processes, purely intellectual work; Software publishers (511200) - Digital products, no physical manufacturing emissions",
         "scale_4": "Moderate - some chemical processing, heat treatment, smelting",
-        "scale_4_examples": "Paper mills (322120), Glass product manufacturing (327200)",
+        "scale_4_examples": "Paper mills (322120) - Chemical pulping processes but not as emissions-intensive as primary production; Glass product manufacturing (327200) - Requires melting but not as intensive as primary production",
         "scale_7": "High - primary production of cement, steel, chemicals, refining",
-        "scale_7_examples": "Cement manufacturing (327310), Iron and steel mills (331110)",
+        "scale_7_examples": "Cement manufacturing (327310) - Calcination process releases CO2 directly from chemical reaction; Iron and steel mills (331110) - Blast furnaces with significant process emissions",
         "category": "Process"
     },
     
     "material_processing_depth": {
         "description": "How extensively raw materials are transformed",
         "scale_1": "Primary transformation - raw material to basic form (mining, milling, smelting)",
-        "scale_1_examples": "Coal mining (212100), Stone mining and quarrying (212310)",
+        "scale_1_examples": "Coal mining (212100) - Extracts raw coal with minimal transformation; Stone mining and quarrying (212310) - Basic extraction and sizing of raw stone",
         "scale_4": "Secondary processing - shaping, forming, chemical processing",
-        "scale_4_examples": "Millwork (321910), Plastics product manufacturing (326190)",
+        "scale_4_examples": "Millwork (321910) - Shapes wood into finished architectural products; Plastics product manufacturing (326190) - Molds resins into consumer products",
         "scale_7": "Final assembly/finishing - component assembly, packaging, quality control",
-        "scale_7_examples": "Automobile manufacturing (336111), Electronic computer manufacturing (334111)",
+        "scale_7_examples": "Automobile manufacturing (336111) - Assembles thousands of components into finished vehicles; Electronic computer manufacturing (334111) - Integrates complex subsystems into final products",
         "category": "Process"
     },
     
     "thermal_process_intensity": {
         "description": "Presence of high-temperature processes requiring significant heat",
         "scale_1": "Ambient/low-heat operations - assembly, cold processing, services",
-        "scale_1_examples": "Legal services (541100), Software publishers (511200)",
+        "scale_1_examples": "Legal services (541100) - Office environment with no heating requirements; Software publishers (511200) - Server rooms may generate heat but no process heating",
         "scale_4": "Moderate heating - drying, curing, moderate temperature processing",
-        "scale_4_examples": "Sawmills and wood preservation (321100), Bread and bakery product manufacturing (311810)",
+        "scale_4_examples": "Sawmills and wood preservation (321100) - Kiln drying of wood; Bread and bakery product manufacturing (311810) - Oven baking at moderate temperatures",
         "scale_7": "High-heat processes - smelting, refining, cement kilns, glass melting",
-        "scale_7_examples": "Cement manufacturing (327310), Glass and glass product manufacturing (327200)",
+        "scale_7_examples": "Cement manufacturing (327310) - Kilns operate at ~1400°C; Glass and glass product manufacturing (327200) - Furnaces reach 1700°C for melting",
         "category": "Energy"
     },
     
     "electrification_feasibility": {
         "description": "How easily processes could potentially run on electricity",
         "scale_1": "Already highly electrified - motors, pumps, conveyors, electronics",
-        "scale_1_examples": "Data processing and hosting (518200), Electronic computer manufacturing (334111)",
+        "scale_1_examples": "Data processing and hosting (518200) - Entirely electricity-powered servers and cooling; Electronic computer manufacturing (334111) - Assembly uses electric tools and test equipment",
         "scale_4": "Mixed - some processes electrifiable, others require combustion",
-        "scale_4_examples": "Paper mills (322120), Food processing (311410)",
+        "scale_4_examples": "Paper mills (322120) - Electric motors for machinery but steam needs from boilers; Food processing (311410) - Electric mixers but gas ovens for baking",
         "scale_7": "Hard-to-electrify - high-temperature heat, chemical reduction processes",
-        "scale_7_examples": "Cement manufacturing (327310), Iron and steel mills (331110)",
+        "scale_7_examples": "Cement manufacturing (327310) - High-temperature kilns currently require fossil fuels; Iron and steel mills (331110) - Blast furnaces need coke for chemical reduction",
         "category": "Energy"
     },
     
     "continuous_operations_intensity": {
         "description": "Degree to which operations run continuously vs. batch/intermittent",
         "scale_1": "Primarily continuous - 24/7 operations, baseload energy demand",
-        "scale_1_examples": "Electric power generation (221100), Petroleum refineries (324110)",
+        "scale_1_examples": "Electric power generation (221100) - Baseload plants run continuously; Petroleum refineries (324110) - Operate 24/7 for efficiency",
         "scale_4": "Mixed - some continuous, some batch",
-        "scale_4_examples": "Chemical manufacturing (325190), Plastics product manufacturing (326190)",
+        "scale_4_examples": "Chemical manufacturing (325190) - Some continuous processes, some batch reactors; Plastics product manufacturing (326190) - Injection molding can be continuous, assembly batch",
         "scale_7": "Primarily batch/intermittent - start-stop, variable energy demand",
-        "scale_7_examples": "Construction machinery manufacturing (333120), Furniture manufacturing (337110)",
+        "scale_7_examples": "Construction machinery manufacturing (333120) - Project-based, made to order; Furniture manufacturing (337110) - Produced in discrete batches",
         "category": "Operations"
     },
     
     "material_throughput_scale": {
         "description": "Relative volume/scale of material processing",
         "scale_1": "Large-scale/commodity - high volume, mass production",
-        "scale_1_examples": "Iron and steel mills (331110), Petroleum refineries (324110)",
+        "scale_1_examples": "Iron and steel mills (331110) - Millions of tons produced annually; Petroleum refineries (324110) - Massive crude oil processing volumes",
         "scale_4": "Medium-scale - moderate volumes, regional operations",
-        "scale_4_examples": "Breweries (312120), Dairy product manufacturing (31151A)",
+        "scale_4_examples": "Breweries (312120) - Regional distribution, moderate batch sizes; Dairy product manufacturing (31151A) - Processes regional milk supply",
         "scale_7": "Small-scale/specialty - low volume, specialized products",
-        "scale_7_examples": "Custom computer programming (541511), Jewelry manufacturing (339910)",
+        "scale_7_examples": "Custom computer programming (541511) - Project-based, no physical throughput; Jewelry manufacturing (339910) - Small batches, precious materials",
         "category": "Scale"
     },
     
     "chemical_intensity": {
         "description": "Presence of chemical processes or reactions in production",
         "scale_1": "Minimal - mechanical, physical, assembly operations",
-        "scale_1_examples": "Automobile assembly (336111), Furniture manufacturing (337110)",
+        "scale_1_examples": "Automobile assembly (336111) - Primarily mechanical joining and assembly; Furniture manufacturing (337110) - Cutting, shaping, assembly of wood/materials",
         "scale_4": "Moderate - some chemical treatment, additives, processing",
-        "scale_4_examples": "Pulp mills (322110), Photographic equipment manufacturing (333316)",
+        "scale_4_examples": "Pulp mills (322110) - Chemical digestion of wood fibers; Photographic equipment manufacturing (333316) - Chemical coatings and processing",
         "scale_7": "High - chemical synthesis, refining, primary chemical production",
-        "scale_7_examples": "Petrochemical manufacturing (325110), Pharmaceutical preparation (325412)",
+        "scale_7_examples": "Petrochemical manufacturing (325110) - Complex chemical synthesis from hydrocarbons; Pharmaceutical preparation (325412) - Multi-step chemical synthesis of active ingredients",
         "category": "Process"
     },
     
     "capital_vs_labor_intensity": {
         "description": "Balance between capital equipment and manual labor (proxy for automation/modernization)",
         "scale_1": "Capital-intensive - highly automated, equipment-heavy, low labor per unit",
-        "scale_1_examples": "Petroleum refineries (324110), Electric power generation (221100)",
+        "scale_1_examples": "Petroleum refineries (324110) - Billions in equipment, minimal operators; Electric power generation (221100) - Highly automated control rooms",
         "scale_4": "Balanced - mix of automation and manual operations",
-        "scale_4_examples": "Machine shops (332710), Printing (323110)",
+        "scale_4_examples": "Machine shops (332710) - CNC machines with skilled operators; Printing (323110) - Automated presses with setup labor",
         "scale_7": "Labor-intensive - handcrafted, manual processes, high labor input",
-        "scale_7_examples": "Jewelry manufacturing (339910), Private households (814000)",
+        "scale_7_examples": "Jewelry manufacturing (339910) - Skilled artisans crafting each piece; Private households (814000) - Pure service labor",
         "category": "Structure"
     }
 }
 
-# Save variables definition to CSV
+# Rest of your export code remains exactly the same...
 df_variables = pd.DataFrame([
     {
         'variable': var,

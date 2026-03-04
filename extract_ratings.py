@@ -43,52 +43,81 @@ class IndustryRatingExtractor:
             variables_text += f"""
     {var_name}:
     - Description: {var_info['description']}
-    - Scale 1: {var_info['scale_1']}
-    Examples: {var_info['scale_1_examples']}
-    - Scale 4: {var_info['scale_4']}
-    Examples: {var_info['scale_4_examples']}
-    - Scale 7: {var_info['scale_7']}
-    Examples: {var_info['scale_7_examples']}
     - Category: {var_info['category']}
+
+    REFERENCE BENCHMARKS:
+    • RATING 1: {var_info['scale_1']}
+        Example: {var_info['scale_1_examples']}
+        
+    • RATING 4: {var_info['scale_4']}
+        Example: {var_info['scale_4_examples']}
+        
+    • RATING 7: {var_info['scale_7']}
+        Example: {var_info['scale_7_examples']}
     """
         
-        prompt = f"""You are an expert analyst extracting carbon intensity ratings for industries.
+        prompt = f"""You are an expert analyst rating industries on characteristics related to carbon intensity.
 
-    INDUSTRY CODE: {industry_code}
-    INDUSTRY NAME: {industry_name}
+    INDUSTRY TO RATE:
+    Code: {industry_code}
+    Name: {industry_name}
 
     INDUSTRY DESCRIPTION:
     {industry_description}
 
-    RATING SCALE DEFINITIONS:
+    RATING SCALES (1-7):
     {variables_text}
 
-    TASK:
-    For each variable above, rate this industry on a scale of 1-7 based SOLELY on the provided industry description.
-    Base your ratings ONLY on evidence found in the description text.
+    RATING PHILOSOPHY:
+    - Be LIBERAL with ratings - use the FULL 1-7 range
+    - RATING 1 and RATING 7 should be used for genuinely exceptional cases
+    - Most industries will fall in the middle (2-6), but extremes DO exist
+    - If an industry closely resembles a RATING 7 example, give it a 6 or 7
+    - If an industry closely resembles a RATING 1 example, give it a 1 or 2
+    - If it falls between benchmarks, use intermediate values (2,3,5,6)
 
-    IMPORTANT RULES:
-    1. Only use ratings 1, 2, 3, 4, 5, 6, or 7 (whole numbers only, no decimals)
-    2. Provide a brief 1-sentence justification for each rating, citing specific evidence from the description
-    3. Return ONLY valid JSON without any other text
+    CALIBRATION APPROACH:
+    For each variable, follow this process:
 
-    OUTPUT FORMAT:
+    1. COMPARE this industry to the RATING 7 example:
+    - If it's IDENTICAL or NEARLY IDENTICAL → consider 6-7
+    - If it's SIMILAR but less intense → consider 5
+    
+    2. COMPARE to the RATING 1 example:
+    - If it's IDENTICAL or NEARLY IDENTICAL → consider 1-2
+    - If it's SIMILAR but slightly more intense → consider 3
+    
+    3. COMPARE to the RATING 4 example:
+    - If it's COMPARABLE → consider 4
+    - If it's between 4 and 7 → use 5-6
+    - If it's between 1 and 4 → use 2-3
+
+    IMPORTANT GUIDELINES:
+    1. DO NOT cluster all ratings in the middle (3-5). Use the full scale.
+    2. If the industry description contains words like "smelting", "refining", "kiln", "furnace" → lean toward higher ratings (5-7)
+    3. If the description contains words like "assembly", "services", "software", "retail" → lean toward lower ratings (1-3)
+    4. Be CONFIDENT in assigning extremes when the evidence supports it
+    5. Each rating must be a WHOLE NUMBER (1-7)
+
+    Return ONLY valid JSON in this exact format, where x is the rating you provide:
+
     {{
         "industry_code": "{industry_code}",
         "industry_name": "{industry_name}",
         "ratings": {{
-            "process_emission_intensity": {{"score": 4, "justification": "Brief reason based on description"}},
-            "material_processing_depth": {{"score": 3, "justification": "Brief reason based on description"}},
-            "thermal_process_intensity": {{"score": 5, "justification": "Brief reason based on description"}},
-            "electrification_feasibility": {{"score": 2, "justification": "Brief reason based on description"}},
-            "continuous_operations_intensity": {{"score": 6, "justification": "Brief reason based on description"}},
-            "material_throughput_scale": {{"score": 3, "justification": "Brief reason based on description"}},
-            "chemical_intensity": {{"score": 4, "justification": "Brief reason based on description"}},
-            "capital_vs_labor_intensity": {{"score": 5, "justification": "Brief reason based on description"}}
+            "process_emission_intensity": {{"score": x, "justification": "Brief reason based on description"}},
+            "material_processing_depth": {{"score": x, "justification": "Brief reason based on description"}},
+            "thermal_process_intensity": {{"score": x, "justification": "Brief reason based on description"}},
+            "electrification_feasibility": {{"score": x, "justification": "Brief reason based on description"}},
+            "continuous_operations_intensity": {{"score": x, "justification": "Brief reason based on description"}},
+            "material_throughput_scale": {{"score": x, "justification": "Brief reason based on description"}},
+            "chemical_intensity": {{"score": x, "justification": "Brief reason based on description"}},
+            "capital_vs_labor_intensity": {{"score": x, "justification": "Brief reason based on description"}}
         }}
     }}"""
         
         return prompt
+
     
     def _load_progress(self):
         """Load progress from file if exists"""
