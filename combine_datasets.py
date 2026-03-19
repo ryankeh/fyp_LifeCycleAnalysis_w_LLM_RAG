@@ -102,7 +102,7 @@ geo_cols = ['iso3', 'area', 'dis_int', 'lat', 'lon']
 geo_renamed = {
     'iso3': 'Country Code',
     'area': 'area_sq_km',
-    'dis_int': 'distance_international_km'
+    'dis_int': 'distance_internal_km'
 }
 
 geo_df_clean = geo_df[geo_cols].copy()
@@ -238,7 +238,7 @@ final_columns = [
     'continuous_operations_intensity_score', 'material_throughput_scale_score',
     'chemical_intensity_score', 'capital_vs_labor_intensity_score',
     # Geographic variables
-    'area_sq_km', 'distance_international_km', 'lat', 'lon'
+    'area_sq_km', 'distance_internal_km', 'lat', 'lon'
 ]
 
 # Check which columns are actually in merged_df
