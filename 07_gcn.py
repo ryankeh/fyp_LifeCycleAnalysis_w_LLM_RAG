@@ -310,7 +310,7 @@ dist_df = pd.read_csv("country_distance_matrix_distwces.csv", index_col=0)
 
 # Create adjacency matrix
 adj_matrix = np.zeros((num_countries, num_countries))
-scale = 200  # Your optimized scale
+scale = 100  # Your optimized scale
 
 for i, country1 in enumerate(countries):
     for j, country2 in enumerate(countries):
